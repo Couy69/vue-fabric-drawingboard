@@ -492,9 +492,13 @@ export default {
     this.canvas.on("mouse:up", this.mouseup);
 
     document.onkeydown = e=> {
+      console.log(e)
       let key = window.event.keyCode;
       if(e.keyCode==46||e.keyCode==8){
         this.deleteObj()
+      }
+      if(e.keyCode==90&&e.ctrlKey){
+        this.canvas.remove(this.canvas.getObjects()[this.canvas.getObjects().length-1]);
       }
     };
 
