@@ -85,7 +85,11 @@ export default {
   methods: {
     drawTypeChange(e) {
       this.drawType = e;
-      this.canvas.isDrawingMode = false;
+      if(e=='pen'){
+        this.canvas.isDrawingMode = true;
+      }else{
+        this.canvas.isDrawingMode = false;
+      }
     },
     mousedown(e) {
       var xy = this.transformMouse(e.e.offsetX, e.e.offsetY);
@@ -168,7 +172,6 @@ export default {
       }
     },
     deleteObj() {
-      console.log(this.canvas.getActiveObjects());
       this.canvas.getActiveObjects().map(item => {
         this.canvas.remove(item);
       });
@@ -181,6 +184,7 @@ export default {
       this.polygonMode = true;
       this.pointArray = new Array();
       this.lineArray = new Array();
+      this.canvas.isDrawingMode = false;
     },
     addPoint(e) {
       var random = Math.floor(Math.random() * 10000);
@@ -338,20 +342,17 @@ export default {
         mouseFrom = this.mouseFrom,
         mouseTo = this.mouseTo;
       switch (this.drawType) {
-        case "pen": //画笔
-          this.canvas.isDrawingMode = true;
-          break;
         case "arrow": //箭头
-          let x1 = mouseFrom.x,x2= mouseTo.x,y1 = mouseFrom.y,y2= mouseTo.y;
-          let w = (x2-x1),h = (y2-y1),sh = Math.cos(Math.PI/4)*16
-          let sin = h/Math.sqrt(Math.pow(w,2)+Math.pow(h,2))   
-          let cos = w/Math.sqrt(Math.pow(w,2)+Math.pow(h,2)) 
-          let w1 =((16*sin)/4),h1 = ((16*cos)/4),centerx=sh*cos,centery=sh*sin
+          var x1 = mouseFrom.x,x2= mouseTo.x,y1 = mouseFrom.y,y2= mouseTo.y;
+          var w = (x2-x1),h = (y2-y1),sh = Math.cos(Math.PI/4)*16
+          var sin = h/Math.sqrt(Math.pow(w,2)+Math.pow(h,2))   
+          var cos = w/Math.sqrt(Math.pow(w,2)+Math.pow(h,2)) 
+          var w1 =((16*sin)/4),h1 = ((16*cos)/4),centerx=sh*cos,centery=sh*sin
           /**
            * centerx,centery 表示起始点，终点连线与箭头尖端等边三角形交点相对x，y
            * w1 ，h1用于确定四个点
           */ 
-          let path = " M " + x1 + " " + (y1);
+          var path = " M " + x1 + " " + (y1);
             path += " L " + (x2-centerx+w1) + " " + (y2-centery-h1);
             path += " L " + (x2-centerx+w1*2) + " " + (y2-centery-h1*2);
             path += " L " + (x2) + " " + y2;
@@ -489,6 +490,14 @@ export default {
     this.canvas.on("mouse:down", this.mousedown);
     this.canvas.on("mouse:move", this.mousemove);
     this.canvas.on("mouse:up", this.mouseup);
+
+    document.onkeydown = e=> {
+      let key = window.event.keyCode;
+      if(e.keyCode==46||e.keyCode==8){
+        this.deleteObj()
+      }
+    };
+
     // var originalRender = fabric.Textbox.prototype._render;
     // fabric.Textbox.prototype._render = function(ctx) {
     //   originalRender.call(this, ctx);
