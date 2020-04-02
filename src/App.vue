@@ -5,13 +5,11 @@
     </div>
     <div class="panel-body">
       <div class="demo">
-        <canvas
-          id="canvas"
-          width="1280"
-          height="720"
-          >
-        </canvas>
+        <canvas id="canvas" :width="width" :height="height"></canvas>
         <div class="draw-btn-group">
+          <div :class="{active:drawType==''}" @click="drawTypeChange('')">
+            <i class="draw-icon icon-mouse"></i>
+          </div>
           <div :class="{active:drawType=='arrow'}" @click="drawTypeChange('arrow')">
             <i class="draw-icon icon-1"></i>
           </div>
@@ -37,12 +35,21 @@
             <i class="draw-icon icon-7"></i>
           </div>
 
-          <div @click="deleteObj">
-            <i class="draw-icon icon-del"></i>
+          <div @click="uploadImg">
+            <i class="draw-icon icon-img"></i>
           </div>
+          <div @click="loadExpImg">
+            <i class="draw-icon icon-img"></i>
+          </div>
+          <!-- <div @click="save">
+            <i class="draw-icon icon-save"></i>
+          </div> -->
         </div>
       </div>
     </div>
+    <input type="file" @change="uploadImgChange" id="imgInput" accept="image/*" />
+    <img id="img" :src="imgSrc" />
+    <img id="expImg" src="./assets/icons/draw/exp.jpg" />
   </div>
 </template>
 <script>
@@ -50,11 +57,13 @@ export default {
   name: "App",
   data() {
     return {
+      width:1280,
+      height:720,
       rect: [],
       canvas: {},
-      showMenu:false,
-      x:'',
-      y:'',
+      showMenu: false,
+      x: "",
+      y: "",
 
       mouseFrom: {},
       mouseTo: {},
@@ -74,20 +83,68 @@ export default {
       lineArray: [],
       activeShape: false,
       activeLine: "",
-      line: {}
+      line: {},
+
+      imgFile: {},
+      imgSrc: ""
     };
   },
-  watch:{
-    drawType(){
-      this.canvas.selection = !this.drawType
+  watch: {
+    drawType() {
+      this.canvas.selection = !this.drawType;
     }
   },
   methods: {
+    save() {
+      var oCanvas = document.getElementById("canvas");
+
+      Canvas2Image.saveAsPNG(oCanvas); // 这将会提示用户保存PNG图片
+      // Canvas2Image.saveAsJPEG(oCanvas); // 这将会提示用户保存JPG图片
+      // Canvas2Image.saveAsBMP(oCanvas); // 这将会提示用户保存BMP图片
+    },
+    uploadImg() {
+      document.getElementById("imgInput").click();
+    },
+    loadExpImg() {
+      var imgElement = document.getElementById("expImg"); //声明我们的图片
+      var imgInstance = new fabric.Image(imgElement, {
+        selectable: false
+        // zIndex:-99,
+      });
+      this.canvas.add(imgInstance);
+    },
+    uploadImgChange() {
+      var eleImportInput = document.getElementById("imgInput");
+      this.imgFile = eleImportInput.files[0];
+      var imgSrc = "",
+        imgTitle = "";
+      if (/\.(jpe?g|png|gif)$/i.test(this.imgFile.name)) {
+        var reader = new FileReader();
+        var _this = this;
+        reader.addEventListener(
+          "load",
+          function() {
+            imgTitle = _this.imgFile.name;
+            _this.imgSrc = this.result;
+          },
+          false
+        );
+        reader.readAsDataURL(this.imgFile);
+      }
+      var imgElement = document.getElementById("img"); //声明我们的图片
+      imgElement.onload = () => {
+        var imgInstance = new fabric.Image(imgElement, {
+          zIndex: 1
+        });
+
+        this.canvas.add(imgInstance);
+      };
+    },
     drawTypeChange(e) {
       this.drawType = e;
-      if(e=='pen'){
+      if (e == "pen") {
         this.canvas.isDrawingMode = true;
-      }else{
+      } else {
         this.canvas.isDrawingMode = false;
       }
     },
@@ -112,14 +169,17 @@ export default {
           hasControls: false,
           textboxBorderColor: this.color,
           showTextBoxBorder: true,
+          zIndex: 1,
           text: this.rectangleLabel
         });
         this.canvas.add(this.textbox);
       }
       if (this.drawType == "polygon") {
         try {
-          if (e.target && e.target.id == this.pointArray[0].id) {
-            this.generatePolygon();
+          if (this.pointArray.length > 1) {
+            if (e.target && e.target.id == this.pointArray[0].id) {
+              this.generatePolygon();
+            }
           }
           if (this.polygonMode) {
             this.addPoint(e);
@@ -138,7 +198,6 @@ export default {
       this.moveCount = 1;
       if (this.drawType != "polygon") {
         this.doDrawing = false;
-        this.drawType = null;
       }
     },
     mousemove(e) {
@@ -161,7 +220,8 @@ export default {
           var points = this.activeShape.get("points");
           points[this.pointArray.length] = {
             x: pointer.x,
-            y: pointer.y
+            y: pointer.y,
+            zIndex: 1
           };
           this.activeShape.set({
             points: points
@@ -227,6 +287,7 @@ export default {
         hasBorders: false,
         hasControls: false,
         evented: false,
+
         objectCaching: false
       });
       if (this.activeShape) {
@@ -241,6 +302,7 @@ export default {
           strokeWidth: 1,
           fill: "#cccccc",
           opacity: 0.3,
+
           selectable: false,
           hasBorders: false,
           hasControls: false,
@@ -263,6 +325,7 @@ export default {
           strokeWidth: 1,
           fill: "#cccccc",
           opacity: 0.3,
+
           selectable: false,
           hasBorders: false,
           hasControls: false,
@@ -343,30 +406,38 @@ export default {
         mouseTo = this.mouseTo;
       switch (this.drawType) {
         case "arrow": //箭头
-          var x1 = mouseFrom.x,x2= mouseTo.x,y1 = mouseFrom.y,y2= mouseTo.y;
-          var w = (x2-x1),h = (y2-y1),sh = Math.cos(Math.PI/4)*16
-          var sin = h/Math.sqrt(Math.pow(w,2)+Math.pow(h,2))   
-          var cos = w/Math.sqrt(Math.pow(w,2)+Math.pow(h,2)) 
-          var w1 =((16*sin)/4),h1 = ((16*cos)/4),centerx=sh*cos,centery=sh*sin
+          var x1 = mouseFrom.x,
+            x2 = mouseTo.x,
+            y1 = mouseFrom.y,
+            y2 = mouseTo.y;
+          var w = x2 - x1,
+            h = y2 - y1,
+            sh = Math.cos(Math.PI / 4) * 16;
+          var sin = h / Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2));
+          var cos = w / Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2));
+          var w1 = (16 * sin) / 4,
+            h1 = (16 * cos) / 4,
+            centerx = sh * cos,
+            centery = sh * sin;
           /**
            * centerx,centery 表示起始点，终点连线与箭头尖端等边三角形交点相对x，y
            * w1 ，h1用于确定四个点
-          */ 
-          var path = " M " + x1 + " " + (y1);
-            path += " L " + (x2-centerx+w1) + " " + (y2-centery-h1);
-            path += " L " + (x2-centerx+w1*2) + " " + (y2-centery-h1*2);
-            path += " L " + (x2) + " " + y2;
-            path += " L " + (x2-centerx-w1*2) + " " + (y2-centery+h1*2);
-            path += " L " + (x2-centerx-w1) + " " + (y2-centery+h1);
-            path += " Z";
-          canvasObject = new fabric.Path(
-            path,
-            {
-              stroke: this.color,
-              fill: this.color,
-              strokeWidth: this.drawWidth
-            }
-          );
+           */
+
+          var path = " M " + x1 + " " + y1;
+          path += " L " + (x2 - centerx + w1) + " " + (y2 - centery - h1);
+          path +=
+            " L " + (x2 - centerx + w1 * 2) + " " + (y2 - centery - h1 * 2);
+          path += " L " + x2 + " " + y2;
+          path +=
+            " L " + (x2 - centerx - w1 * 2) + " " + (y2 - centery + h1 * 2);
+          path += " L " + (x2 - centerx - w1) + " " + (y2 - centery + h1);
+          path += " Z";
+          canvasObject = new fabric.Path(path, {
+            stroke: this.color,
+            fill: this.color,
+            strokeWidth: this.drawWidth
+          });
           break;
         case "ellipse": //椭圆
           var radius =
@@ -472,13 +543,13 @@ export default {
         default:
           break;
       }
-      
+
       if (canvasObject) {
         // canvasObject.index = getCanvasObjectIndex();\
         this.canvas.add(canvasObject); //.setActiveObject(canvasObject)
         this.drawingObject = canvasObject;
       }
-    },
+    }
   },
   mounted() {
     this.canvas = new fabric.Canvas("canvas", {
@@ -486,22 +557,23 @@ export default {
       // selectable: false,
       // selection: false
     });
-    this.canvas.selectionColor = 'rgba(0,0,0,0.05)' 
+    this.canvas.selectionColor = "rgba(0,0,0,0.05)";
     this.canvas.on("mouse:down", this.mousedown);
     this.canvas.on("mouse:move", this.mousemove);
     this.canvas.on("mouse:up", this.mouseup);
 
-    document.onkeydown = e=> {
-      console.log(e)
+    document.onkeydown = e => {
+      console.log(e);
       let key = window.event.keyCode;
-      if(e.keyCode==46||e.keyCode==8){
-        this.deleteObj()
+      if (e.keyCode == 46) {
+        this.deleteObj();
       }
-      if(e.keyCode==90&&e.ctrlKey){
-        this.canvas.remove(this.canvas.getObjects()[this.canvas.getObjects().length-1]);
+      if (e.keyCode == 90 && e.ctrlKey) {
+        this.canvas.remove(
+          this.canvas.getObjects()[this.canvas.getObjects().length - 1]
+        );
       }
     };
-
     // var originalRender = fabric.Textbox.prototype._render;
     // fabric.Textbox.prototype._render = function(ctx) {
     //   originalRender.call(this, ctx);
@@ -533,6 +605,10 @@ export default {
 <style lang="scss" scoped>
 .el-container {
   flex-direction: column;
+}
+img,
+input {
+  display: none;
 }
 .demo {
   display: flex;
@@ -573,21 +649,34 @@ canvas {
     }
     .icon-4 {
       background-image: url("./assets/icons/draw/4.png");
+      background-size: 75%;
     }
     .icon-5 {
       background-image: url("./assets/icons/draw/5.png");
-      background-size: 75%;
+      background-size: 70%;
     }
     .icon-6 {
       background-image: url("./assets/icons/draw/6.png");
     }
     .icon-7 {
       background-image: url("./assets/icons/draw/7.png");
-      background-size: 90%;
+      background-size: 80%;
     }
     .icon-del {
       background-image: url("./assets/icons/draw/del.png");
       background-size: 90%;
+    }
+    .icon-img {
+      background-image: url("./assets/icons/draw/img.png");
+      background-size: 80%;
+    }
+    .icon-save {
+      background-image: url("./assets/icons/draw/save.png");
+      background-size: 80%;
+    }
+    .icon-mouse {
+      background-image: url("./assets/icons/draw/mouse.png");
+      background-size: 60%;
     }
   }
   .active {
