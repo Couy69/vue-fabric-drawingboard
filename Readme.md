@@ -12,9 +12,20 @@ Vue.use(fabric);
 ```
 ## 项目预览
 可以[点击这里](http://couy.xyz/fabricDrawingBoard)直接在线预览：下面是预览图，大概功能和微信，qq之类的截图类似。
-![demo.gif](https://upload-images.jianshu.io/upload_images/14226327-e7c167309cd0ec7e.gif?imageMogr2/auto-orient/strip)
-可以通过下方的按钮，来依次实现画箭头，文字标注，圆形与矩形，带文字标注的矩形，手动画多边形，自由绘画。
-删除的话可以通过框选中元素后，点击下方的垃圾桶按钮删除。
+![ezgif.com-optimize.gif](https://upload-images.jianshu.io/upload_images/14226327-d4d8e787ec2a1fad.gif?imageMogr2/auto-orient/strip)
+## 基础功能
+基础功能可以通过点击下面的按钮，支持选中后按delete删除或者ctrl+z撤销上一步操作
+ - 拖拽
+ - 箭头
+ - 文字
+ - 圆
+ - 矩形
+ - 带文字描述的矩形
+ - 多边形
+ - 画笔
+ - 图片上传
+ - 加载背景图
+ - 保存并下载
 ## 实现
 Fabric.js提供了很详细的canvas操作api，这个画面也全部基于Fabric.js来实现，这里我稍微说一下遇到的坑
 #### 箭头
