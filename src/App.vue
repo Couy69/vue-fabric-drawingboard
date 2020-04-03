@@ -39,11 +39,11 @@
             <i class="draw-icon icon-img"></i>
           </div>
           <div @click="loadExpImg">
-            <i class="draw-icon icon-img"></i>
+            <i class="draw-icon icon-back"></i>
           </div>
-          <!-- <div @click="save">
+          <div @click="save">
             <i class="draw-icon icon-save"></i>
-          </div> -->
+          </div>
         </div>
       </div>
     </div>
@@ -71,7 +71,7 @@ export default {
       canvasObjectIndex: 0,
       textbox: null,
       rectangleLabel: "warning",
-      drawWidth: 1, //笔触宽度
+      drawWidth: 2, //笔触宽度
       color: "#E34F51", //画笔颜色
       drawingObject: null, //当前绘制对象
       moveCount: 1, //绘制移动计数器
@@ -86,21 +86,42 @@ export default {
       line: {},
 
       imgFile: {},
-      imgSrc: ""
+      imgSrc: "",
     };
   },
   watch: {
     drawType() {
       this.canvas.selection = !this.drawType;
-    }
+    },
+    width(){
+      this.canvas.setWidth(this.width) 
+    },
+    height(){
+      this.canvas.setHeight(this.height) 
+    },
   },
   methods: {
-    save() {
-      var oCanvas = document.getElementById("canvas");
+    pointSolt(){
 
-      Canvas2Image.saveAsPNG(oCanvas); // 这将会提示用户保存PNG图片
-      // Canvas2Image.saveAsJPEG(oCanvas); // 这将会提示用户保存JPG图片
-      // Canvas2Image.saveAsBMP(oCanvas); // 这将会提示用户保存BMP图片
+    },
+    save() {
+      var canvas = document.getElementById('canvas')
+      var imgData = canvas.toDataURL('png');
+      imgData = imgData.replace('image/png','image/octet-stream');
+      
+      // 下载后的问题名
+      var filename = 'drawingboard_' + (new Date()).getTime() + '.' + 'png';
+      // download
+      this.saveFile(imgData,filename);
+    },
+    saveFile(data, filename){
+      var save_link = document.createElement('a');
+      save_link.href = data;
+      save_link.download = filename;
+    
+      var event = document.createEvent('MouseEvents');
+      event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+      save_link.dispatchEvent(event);
     },
     uploadImg() {
       document.getElementById("imgInput").click();
@@ -136,7 +157,6 @@ export default {
         var imgInstance = new fabric.Image(imgElement, {
           zIndex: 1
         });
-
         this.canvas.add(imgInstance);
       };
     },
@@ -669,6 +689,10 @@ canvas {
     .icon-img {
       background-image: url("./assets/icons/draw/img.png");
       background-size: 80%;
+    }
+    .icon-back {
+      background-image: url("./assets/icons/draw/back.png");
+      background-size: 75%;
     }
     .icon-save {
       background-image: url("./assets/icons/draw/save.png");
