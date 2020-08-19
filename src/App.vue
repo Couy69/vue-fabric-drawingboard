@@ -34,7 +34,9 @@
           <div :class="{active:drawType=='pen'}" @click="drawTypeChange('pen')">
             <i class="draw-icon icon-7"></i>
           </div>
-
+          <div :class="{active:drawType=='pentagram'}" @click="drawTypeChange('pentagram')">
+            <i class="draw-icon icon-pentagram"></i>
+          </div>
           <div @click="uploadImg">
             <i class="draw-icon icon-img"></i>
           </div>
@@ -105,14 +107,30 @@ export default {
 
     },
     save() {
-      var canvas = document.getElementById('canvas')
-      var imgData = canvas.toDataURL('png');
-      imgData = imgData.replace('image/png','image/octet-stream');
+      console.log(this.canvas.getObjects())
+      var a = []
+
+      this.canvas.getObjects().map(item=>{
+        if(item.type == 'polygon'){
+          var b = {
+            'lu':{'x':item.points[0].x,'y':item.points[0].y},
+            'ru':{'x':item.points[1].x,'y':item.points[1].y},
+            'r':{'x':item.points[2].x,'y':item.points[2].y},
+            'lb':{'x':item.points[3].x,'y':item.points[3].y},
+          }
+          a.push(b)  
+        }
+        
+      })
+      console.log(JSON.stringify(a))
+      // var canvas = document.getElementById('canvas')
+      // var imgData = canvas.toDataURL('png');
+      // imgData = imgData.replace('image/png','image/octet-stream');
       
-      // 下载后的问题名
-      var filename = 'drawingboard_' + (new Date()).getTime() + '.' + 'png';
-      // download
-      this.saveFile(imgData,filename);
+      // // 下载后的问题名
+      // var filename = 'drawingboard_' + (new Date()).getTime() + '.' + 'png';
+      // // download
+      // this.saveFile(imgData,filename);
     },
     saveFile(data, filename){
       var save_link = document.createElement('a');
@@ -153,9 +171,13 @@ export default {
         reader.readAsDataURL(this.imgFile);
       }
       var imgElement = document.getElementById("img"); //声明我们的图片
+      
       imgElement.onload = () => {
+        this.width = imgElement.width
+        this.height = imgElement.height
         var imgInstance = new fabric.Image(imgElement, {
-          zIndex: 1
+          zIndex: -1,
+          selectable: false
         });
         this.canvas.add(imgInstance);
       };
@@ -362,30 +384,6 @@ export default {
       this.canvas.add(this.line);
       this.canvas.add(circle);
     },
-    //绘制箭头方法
-    drawArrow(fromX, fromY, toX, toY, theta, headlen) {
-      theta = typeof theta != "undefined" ? theta : 30;
-      headlen = typeof theta != "undefined" ? headlen : 6;
-      var angle = (Math.atan2(fromY - toY, fromX - toX) * 180) / Math.PI,
-        angle1 = ((angle + theta) * Math.PI) / 180,
-        angle2 = ((angle - theta) * Math.PI) / 180,
-        topX = headlen * Math.cos(angle1),
-        topY = headlen * Math.sin(angle1),
-        botX = headlen * Math.cos(angle2),
-        botY = headlen * Math.sin(angle2);
-      var arrowX = fromX - topX,
-        arrowY = fromY - topY;
-      var path = " M " + fromX + " " + fromY;
-      path += " L " + toX + " " + toY;
-      arrowX = toX + topX;
-      arrowY = toY + topY;
-      path += " M " + arrowX + " " + arrowY;
-      path += " L " + toX + " " + toY;
-      arrowX = toX + botX;
-      arrowY = toY + botY;
-      path += " L " + arrowX + " " + arrowY;
-      return path;
-    },
     generatePolygon() {
       var points = new Array();
       this.pointArray.map((point, index) => {
@@ -457,6 +455,45 @@ export default {
             stroke: this.color,
             fill: this.color,
             strokeWidth: this.drawWidth
+          });
+          break;
+        case "pentagram": //五角星
+          var x1 = mouseFrom.x,
+            x2 = mouseTo.x,
+            y1 = mouseFrom.y,
+            y2 = mouseTo.y;
+          /**
+           * 实现思路  (x1,y1)表示鼠标起始的位置 (x2,y2)表示鼠标抬起的位置
+           * r 表示五边形外圈圆的半径，这里建议自己画个图理解
+           * 正五边形夹角为36度。计算出cos18°，sin18°备用
+           */
+          var w = Math.abs(x2 - x1),
+            h = Math.abs(y2 - y1),  
+            r = Math.sqrt(w*w+h*h)
+            var cos18 = Math.cos(18*Math.PI / 180)
+            var sin18 = Math.sin(18*Math.PI / 180)
+          
+          /**
+           * 算出对应五个点的坐标转化为路径
+           */
+          var point1 = [x1,y1+r]
+          var point2 = [x1+2*r*(sin18),y1+r-2*r*(cos18)]
+          var point3 = [x1-r*(cos18),y1+r*(sin18)]
+          var point4 = [x1+r*(cos18),y1+r*(sin18)]
+          var point5 = [x1-2*r*(sin18),y1+r-2*r*(cos18)]
+
+          var path = " M " + point1[0] + " " + point1[1]
+          path += " L " + point2[0] + " " + point2[1]
+          path += " L " + point3[0] + " " + point3[1]
+          path += " L " + point4[0] + " " + point4[1]
+          path += " L " + point5[0] + " " + point5[1]
+          path += " Z";
+          console.log(path)
+          canvasObject = new fabric.Path(path, {
+            stroke: this.color,
+            fill: this.color, 
+            strokeWidth: this.drawWidth,  
+            // angle:180,  //设置旋转角度
           });
           break;
         case "ellipse": //椭圆
@@ -660,6 +697,9 @@ canvas {
     }
     .icon-1 {
       background-image: url("./assets/icons/draw/1.png");
+    }
+    .icon-pentagram {
+      background-image: url("./assets/icons/draw/pentagram.png");
     }
     .icon-2 {
       background-image: url("./assets/icons/draw/2.png");
