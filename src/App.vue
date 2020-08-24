@@ -191,7 +191,7 @@ export default {
       }
     },
     mousedown(e) {
-      var xy = this.transformMouse(e.e.offsetX, e.e.offsetY);
+      var xy =e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
       this.mouseFrom.x = xy.x;
       this.mouseFrom.y = xy.y;
       this.doDrawing = true;
@@ -232,7 +232,7 @@ export default {
       }
     },
     mouseup(e) {
-      var xy = this.transformMouse(e.e.offsetX, e.e.offsetY);
+      var xy =e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
       this.mouseTo.x = xy.x;
       this.mouseTo.y = xy.y;
       // drawing();
@@ -248,7 +248,7 @@ export default {
         return;
       }
       this.moveCount++;
-      var xy = this.transformMouse(e.e.offsetX, e.e.offsetY);
+      var xy =e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
       this.mouseTo.x = xy.x;
       this.mouseTo.y = xy.y;
       if (this.drawType != "text" || this.drawType != "polygon") {
@@ -296,8 +296,8 @@ export default {
         fill: "#ffffff",
         stroke: "#333333",
         strokeWidth: 0.5,
-        left: e.e.layerX / this.canvas.getZoom(),
-        top: e.e.layerY / this.canvas.getZoom(),
+        left: (e.pointer.x || e.e.layerX) / this.canvas.getZoom(),
+        top: (e.pointer.y || e.e.layerY) / this.canvas.getZoom(),
         selectable: false,
         hasBorders: false,
         hasControls: false,
@@ -312,10 +312,10 @@ export default {
         });
       }
       var points = [
-        e.e.layerX / this.canvas.getZoom(),
-        e.e.layerY / this.canvas.getZoom(),
-        e.e.layerX / this.canvas.getZoom(),
-        e.e.layerY / this.canvas.getZoom()
+        (e.pointer.x || e.e.layerX) / this.canvas.getZoom(),
+        (e.pointer.y || e.e.layerY) / this.canvas.getZoom(),
+        (e.pointer.x || e.e.layerX) / this.canvas.getZoom(),
+        (e.pointer.y || e.e.layerY) / this.canvas.getZoom()
       ];
 
       this.line = new fabric.Line(points, {
@@ -358,8 +358,8 @@ export default {
       } else {
         var polyPoint = [
           {
-            x: e.e.layerX / this.canvas.getZoom(),
-            y: e.e.layerY / this.canvas.getZoom()
+            x: (e.pointer.x || e.e.layerX) / this.canvas.getZoom(),
+            y: (e.pointer.y || e.e.layerY) / this.canvas.getZoom()
           }
         ];
         var polygon = new fabric.Polygon(polyPoint, {
@@ -488,7 +488,6 @@ export default {
           path += " L " + point4[0] + " " + point4[1]
           path += " L " + point5[0] + " " + point5[1]
           path += " Z";
-          console.log(path)
           canvasObject = new fabric.Path(path, {
             stroke: this.color,
             fill: this.color, 
@@ -620,7 +619,6 @@ export default {
     this.canvas.on("mouse:up", this.mouseup);
 
     document.onkeydown = e => {
-      console.log(e);
       let key = window.event.keyCode;
       if (e.keyCode == 46) {
         this.deleteObj();
@@ -676,7 +674,7 @@ canvas {
   border: 1px dashed black;
 }
 .draw-btn-group {
-  width: 1270px;
+  // width: 1270px;
   margin-top: 10px;
   display: flex;
   align-items: center;
