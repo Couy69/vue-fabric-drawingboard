@@ -1,49 +1,43 @@
 <template>
   <div class="maintenancePlanAdd">
     <div class="child-panel-title">
-      <h2>图形标注DEMO</h2>
+      <h2>图形标注</h2>
     </div>
     <div class="panel-body">
       <div class="demo">
         <canvas id="canvas" :width="width" :height="height"></canvas>
         <div class="draw-btn-group">
-          <div :class="{active:drawType==''}" @click="drawTypeChange('')">
+          <div :class="{active:drawType==''}" title="自由选择" @click="drawTypeChange('')">
             <i class="draw-icon icon-mouse"></i>
           </div>
-          <div :class="{active:drawType=='arrow'}" @click="drawTypeChange('arrow')">
+          <div :class="{active:drawType=='arrow'}" title="画箭头" @click="drawTypeChange('arrow')">
             <i class="draw-icon icon-1"></i>
           </div>
-          <div :class="{active:drawType=='text'}" @click="drawTypeChange('text')">
+          <div :class="{active:drawType=='text'}" title="文本输入框" @click="drawTypeChange('text')">
             <i class="draw-icon icon-2"></i>
           </div>
-          <div :class="{active:drawType=='ellipse'}" @click="drawTypeChange('ellipse')">
+          <div :class="{active:drawType=='ellipse'}" title="画圆" @click="drawTypeChange('ellipse')">
             <i class="draw-icon icon-3"></i>
           </div>
-          <div :class="{active:drawType=='rectangle'}" @click="drawTypeChange('rectangle')">
+          <div :class="{active:drawType=='rectangle'}" title="画矩形" @click="drawTypeChange('rectangle')">
             <i class="draw-icon icon-4"></i>
           </div>
-          <div
-            :class="{active:drawType=='rectangle-text'}"
-            @click="drawTypeChange('rectangle-text')"
-          >
-            <i class="draw-icon icon-5"></i>
-          </div>
-          <div :class="{active:drawType=='polygon'}" @click="drawPolygon">
+          <div :class="{active:drawType=='polygon'}" title="画多边形" @click="drawPolygon">
             <i class="draw-icon icon-6"></i>
           </div>
-          <div :class="{active:drawType=='pen'}" @click="drawTypeChange('pen')">
+          <div :class="{active:drawType=='pen'}" title="笔画" @click="drawTypeChange('pen')">
             <i class="draw-icon icon-7"></i>
           </div>
-          <div :class="{active:drawType=='pentagram'}" @click="drawTypeChange('pentagram')">
+          <div :class="{active:drawType=='pentagram'}" title="五角星" @click="drawTypeChange('pentagram')">
             <i class="draw-icon icon-pentagram"></i>
           </div>
-          <div @click="uploadImg">
+          <div @click="uploadImg" title="从文件选择图片上传">
             <i class="draw-icon icon-img"></i>
           </div>
-          <div @click="loadExpImg">
+          <div @click="loadExpImg" title="加载背景图">
             <i class="draw-icon icon-back"></i>
           </div>
-          <div @click="save">
+          <div @click="save" title="保存">
             <i class="draw-icon icon-save"></i>
           </div>
         </div>
@@ -59,8 +53,8 @@ export default {
   name: "App",
   data() {
     return {
-      width:1280,
-      height:720,
+      width: 1280,
+      height: 720,
       rect: [],
       canvas: {},
       showMenu: false,
@@ -69,7 +63,7 @@ export default {
 
       mouseFrom: {},
       mouseTo: {},
-      drawType: null,
+      drawType: null,  //当前绘制图像的种类
       canvasObjectIndex: 0,
       textbox: null,
       rectangleLabel: "warning",
@@ -87,6 +81,7 @@ export default {
       activeLine: "",
       line: {},
 
+      delectKlass: {},
       imgFile: {},
       imgSrc: "",
     };
@@ -95,48 +90,29 @@ export default {
     drawType() {
       this.canvas.selection = !this.drawType;
     },
-    width(){
-      this.canvas.setWidth(this.width) 
+    width() {
+      this.canvas.setWidth(this.width)
     },
-    height(){
-      this.canvas.setHeight(this.height) 
+    height() {
+      this.canvas.setHeight(this.height)
     },
   },
   methods: {
-    pointSolt(){
-
-    },
+    // 保存当前画布为png图片
     save() {
-      console.log(this.canvas.getObjects())
-      var a = []
+      var canvas = document.getElementById('canvas')
+      var imgData = canvas.toDataURL('png');
+      imgData = imgData.replace('image/png', 'image/octet-stream');
 
-      this.canvas.getObjects().map(item=>{
-        if(item.type == 'polygon'){
-          var b = {
-            'lu':{'x':item.points[0].x,'y':item.points[0].y},
-            'ru':{'x':item.points[1].x,'y':item.points[1].y},
-            'r':{'x':item.points[2].x,'y':item.points[2].y},
-            'lb':{'x':item.points[3].x,'y':item.points[3].y},
-          }
-          a.push(b)  
-        }
-        
-      })
-      console.log(JSON.stringify(a))
-      // var canvas = document.getElementById('canvas')
-      // var imgData = canvas.toDataURL('png');
-      // imgData = imgData.replace('image/png','image/octet-stream');
-      
-      // // 下载后的问题名
-      // var filename = 'drawingboard_' + (new Date()).getTime() + '.' + 'png';
-      // // download
-      // this.saveFile(imgData,filename);
+      // 下载后的问题名，可自由指定
+      var filename = 'drawingboard_' + (new Date()).getTime() + '.' + 'png';
+      this.saveFile(imgData, filename);
     },
-    saveFile(data, filename){
+    saveFile(data, filename) {
       var save_link = document.createElement('a');
       save_link.href = data;
       save_link.download = filename;
-    
+
       var event = document.createEvent('MouseEvents');
       event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
       save_link.dispatchEvent(event);
@@ -144,6 +120,7 @@ export default {
     uploadImg() {
       document.getElementById("imgInput").click();
     },
+    // 从已渲染的DOM元素加载图片至canvas
     loadExpImg() {
       var imgElement = document.getElementById("expImg"); //声明我们的图片
       var imgInstance = new fabric.Image(imgElement, {
@@ -152,17 +129,20 @@ export default {
       });
       this.canvas.add(imgInstance);
     },
+    // 从文件加载图片至canvas
     uploadImgChange() {
+      // 获取文件
       var eleImportInput = document.getElementById("imgInput");
       this.imgFile = eleImportInput.files[0];
       var imgSrc = "",
         imgTitle = "";
+      // 从reader中获取选择文件的src
       if (/\.(jpe?g|png|gif)$/i.test(this.imgFile.name)) {
         var reader = new FileReader();
         var _this = this;
         reader.addEventListener(
           "load",
-          function() {
+          function () {
             imgTitle = _this.imgFile.name;
             _this.imgSrc = this.result;
           },
@@ -171,7 +151,7 @@ export default {
         reader.readAsDataURL(this.imgFile);
       }
       var imgElement = document.getElementById("img"); //声明我们的图片
-      
+
       imgElement.onload = () => {
         this.width = imgElement.width
         this.height = imgElement.height
@@ -182,47 +162,44 @@ export default {
         this.canvas.add(imgInstance);
       };
     },
+    // 开始绘制时，指定绘画种类
     drawTypeChange(e) {
       this.drawType = e;
+      this.canvas.skipTargetFind = !!e
       if (e == "pen") {
+        // isDrawingMode为true 才可以自由绘画
         this.canvas.isDrawingMode = true;
       } else {
         this.canvas.isDrawingMode = false;
       }
     },
+    // 鼠标按下时触发
     mousedown(e) {
-      var xy =e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
+      // 记录鼠标按下时的坐标
+      var xy = e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
       this.mouseFrom.x = xy.x;
       this.mouseFrom.y = xy.y;
       this.doDrawing = true;
       if (this.drawType == "text") {
         this.drawing();
       }
-      if (this.drawType == "rectangle-text") {
-        this.textbox = new fabric.Textbox("", {
-          left: this.mouseFrom.x,
-          top: this.mouseFrom.y - 17,
-          // width: 150,
-          fontSize: 15,
-          hasBorders: false,
-          padding: 5,
-          borderColor: this.color,
-          fill: this.color,
-          hasControls: false,
-          textboxBorderColor: this.color,
-          showTextBoxBorder: true,
-          zIndex: 1,
-          text: this.rectangleLabel
-        });
-        this.canvas.add(this.textbox);
+
+      if (this.textbox) {
+        this.textbox.enterEditing();
+        this.textbox.hiddenTextarea.focus();
       }
+      // 绘制多边形
       if (this.drawType == "polygon") {
+        this.canvas.skipTargetFind = false;
         try {
+          // 此段为判断是否闭合多边形，点击红点时闭合多边形
           if (this.pointArray.length > 1) {
+            // e.target.id == this.pointArray[0].id 表示点击了初始红点
             if (e.target && e.target.id == this.pointArray[0].id) {
               this.generatePolygon();
             }
           }
+          //未点击红点则继续作画
           if (this.polygonMode) {
             this.addPoint(e);
           }
@@ -231,28 +208,31 @@ export default {
         }
       }
     },
+    // 鼠标松开执行
     mouseup(e) {
-      var xy =e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
+      var xy = e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
       this.mouseTo.x = xy.x;
       this.mouseTo.y = xy.y;
-      // drawing();
       this.drawingObject = null;
       this.moveCount = 1;
       if (this.drawType != "polygon") {
         this.doDrawing = false;
       }
     },
+
+    //鼠标移动过程中已经完成了绘制
     mousemove(e) {
       if (this.moveCount % 2 && !this.doDrawing) {
         //减少绘制频率
         return;
       }
       this.moveCount++;
-      var xy =e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
+      var xy = e.pointer || this.transformMouse(e.e.offsetX, e.e.offsetY);
       this.mouseTo.x = xy.x;
       this.mouseTo.y = xy.y;
+      // 多边形与文字框特殊处理
       if (this.drawType != "text" || this.drawType != "polygon") {
-        this.drawing();
+        this.drawing(e);
       }
       if (this.drawType == "polygon") {
         if (this.activeLine && this.activeLine.class == "line") {
@@ -281,11 +261,13 @@ export default {
     transformMouse(mouseX, mouseY) {
       return { x: mouseX / 1, y: mouseY / 1 };
     },
+    // 绘制多边形开始，绘制多边形和其他图形不一样，需要单独处理
     drawPolygon() {
       this.drawType = "polygon";
       this.polygonMode = true;
-      this.pointArray = new Array();
-      this.lineArray = new Array();
+      //这里画的多边形，由顶点与线组成
+      this.pointArray = new Array();  // 顶点集合
+      this.lineArray = new Array();  //线集合
       this.canvas.isDrawingMode = false;
     },
     addPoint(e) {
@@ -413,7 +395,7 @@ export default {
       this.doDrawing = false;
       this.drawType = null;
     },
-    drawing() {
+    drawing(e) {
       if (this.drawingObject) {
         this.canvas.remove(this.drawingObject);
       }
@@ -468,19 +450,19 @@ export default {
            * 正五边形夹角为36度。计算出cos18°，sin18°备用
            */
           var w = Math.abs(x2 - x1),
-            h = Math.abs(y2 - y1),  
-            r = Math.sqrt(w*w+h*h)
-            var cos18 = Math.cos(18*Math.PI / 180)
-            var sin18 = Math.sin(18*Math.PI / 180)
-          
+            h = Math.abs(y2 - y1),
+            r = Math.sqrt(w * w + h * h)
+          var cos18 = Math.cos(18 * Math.PI / 180)
+          var sin18 = Math.sin(18 * Math.PI / 180)
+
           /**
            * 算出对应五个点的坐标转化为路径
            */
-          var point1 = [x1,y1+r]
-          var point2 = [x1+2*r*(sin18),y1+r-2*r*(cos18)]
-          var point3 = [x1-r*(cos18),y1+r*(sin18)]
-          var point4 = [x1+r*(cos18),y1+r*(sin18)]
-          var point5 = [x1-2*r*(sin18),y1+r-2*r*(cos18)]
+          var point1 = [x1, y1 + r]
+          var point2 = [x1 + 2 * r * (sin18), y1 + r - 2 * r * (cos18)]
+          var point3 = [x1 - r * (cos18), y1 + r * (sin18)]
+          var point4 = [x1 + r * (cos18), y1 + r * (sin18)]
+          var point5 = [x1 - 2 * r * (sin18), y1 + r - 2 * r * (cos18)]
 
           var path = " M " + point1[0] + " " + point1[1]
           path += " L " + point2[0] + " " + point2[1]
@@ -490,16 +472,20 @@ export default {
           path += " Z";
           canvasObject = new fabric.Path(path, {
             stroke: this.color,
-            fill: this.color, 
-            strokeWidth: this.drawWidth,  
+            fill: this.color,
+            strokeWidth: this.drawWidth,
             // angle:180,  //设置旋转角度
           });
           break;
         case "ellipse": //椭圆
+          // 按shift时画正圆，只有在鼠标移动时才执行这个，所以按了shift但是没有拖动鼠标将不会画圆
+          if (e.e.shiftKey) {
+            mouseTo.x - left > mouseTo.y - top ? mouseTo.y = top + mouseTo.x - left : mouseTo.x = left + mouseTo.y - top
+          }
           var radius =
             Math.sqrt(
               (mouseTo.x - left) * (mouseTo.x - left) +
-                (mouseTo.y - top) * (mouseTo.y - top)
+              (mouseTo.y - top) * (mouseTo.y - top)
             ) / 2;
           canvasObject = new fabric.Ellipse({
             left: (mouseTo.x - left) / 2 + left,
@@ -514,6 +500,10 @@ export default {
           });
           break;
         case "rectangle": //长方形
+          // 按shift时画正方型
+          if (e.e.shiftKey) {
+            mouseTo.x - left > mouseTo.y - top ? mouseTo.y = top + mouseTo.x - left : mouseTo.x = left + mouseTo.y - top
+          }
           var path =
             "M " +
             mouseFrom.x +
@@ -544,41 +534,6 @@ export default {
             fill: "rgba(255, 255, 255, 0)",
             hasControls: false
           });
-          //也可以使用fabric.Rect
-          break;
-        case "rectangle-text": //长方形带标注框
-          var path =
-            "M " +
-            mouseFrom.x +
-            " " +
-            mouseFrom.y +
-            " L " +
-            mouseTo.x +
-            " " +
-            mouseFrom.y +
-            " L " +
-            mouseTo.x +
-            " " +
-            mouseTo.y +
-            " L " +
-            mouseFrom.x +
-            " " +
-            mouseTo.y +
-            " L " +
-            mouseFrom.x +
-            " " +
-            mouseFrom.y +
-            " z";
-          canvasObject = new fabric.Path(path, {
-            left: left,
-            top: top,
-            stroke: this.color,
-            strokeWidth: this.drawWidth,
-            fill: "rgba(255, 255, 255, 0)",
-            hasControls: false
-          });
-          // this.textbox.enterEditing();
-          // this.textbox.hiddenTextarea.focus();
           //也可以使用fabric.Rect
           break;
         case "text": //文本框
@@ -609,9 +564,9 @@ export default {
   },
   mounted() {
     this.canvas = new fabric.Canvas("canvas", {
-      // skipTargetFind: true,
-      // selectable: false,
-      // selection: false
+      // skipTargetFind: false, //当为真时，跳过目标检测。目标检测将返回始终未定义。点击选择将无效
+      // selectable: false,  //为false时，不能选择对象进行修改
+      // selection: false   // 是否可以多个对象为一组
     });
     this.canvas.selectionColor = "rgba(0,0,0,0.05)";
     this.canvas.on("mouse:down", this.mousedown);
@@ -619,10 +574,11 @@ export default {
     this.canvas.on("mouse:up", this.mouseup);
 
     document.onkeydown = e => {
-      let key = window.event.keyCode;
+      // 键盘 delect删除所选元素
       if (e.keyCode == 46) {
         this.deleteObj();
       }
+      // ctrl+z 删除最近添加的元素
       if (e.keyCode == 90 && e.ctrlKey) {
         this.canvas.remove(
           this.canvas.getObjects()[this.canvas.getObjects().length - 1]
